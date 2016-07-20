@@ -47,37 +47,6 @@ class AFQ(object):
     """
     Requires the following file structure in your study folder::
 
-        ├── sub01
-        │   ├── sess01
-        │   │   ├── anat
-        │   │   │   └── sub-01_sess-01_T1.nii.gz
-        │   │   └── dwi
-        │   │       ├── sub-01_sess-01_dwi.bvals
-        │   │       ├── sub-01_sess-01_dwi.bvecs
-        │   │       └── sub-01_sess-01_dwi.nii.gz
-        │   └── sess02
-        │       ├── anat
-        │       │   └── sub-01_sess-02_T1w.nii.gz
-        │       └── dwi
-        │           ├── sub-01_sess-02_dwi.bvals
-        │           ├── sub-01_sess-02_dwi.bvecs
-        │           └── sub-01_sess-02_dwi.nii.gz
-        └── sub02
-            ├── sess01
-            │   ├── anat
-            │   │   └── sub-02_sess-01_T1w.nii.gz
-            │   └── dwi
-            │       ├── sub-02_sess-01_dwi.bvals
-            │       ├── sub-02_sess-01_dwi.bvecs
-            │       └── sub-02_sess-01_dwi.nii.gz
-            └── sess02
-                ├── anat
-                │   └── sub-02_sess-02_T1w.nii.gz
-                └── dwi
-                    ├── sub-02_sess-02_dwi.bvals
-                    ├── sub-02_sess-02_dwi.bvecs
-                    └── sub-02_sess-02_dwi.nii.gz
-
     Notes
     -----
     The structure of the file-system required here resembles that specified
@@ -148,12 +117,20 @@ class AFQ(object):
         self.init_affine()
 
     def init_affine(self):
+        """
+        For each subject in the AFQ object we get the affine from that subject's
+        dwi nifti file
+        """
         affine_list = []
         for fdwi in self.data_frame['dwi_file']:
             affine_list.append(nib.load(fdwi).get_affine())
         self.data_frame['dwi_affine'] = affine_list
 
     def init_gtab(self):
+        """
+        For each subject in the AFQ object we get the gradient table that is
+        associate with the dwi file
+        """
         gtab_list = []
         for fbval, fbvec in zip(self.data_frame['bval_file'],
                                 self.data_frame['bvec_file']):
@@ -165,7 +142,11 @@ class AFQ(object):
         self.data_frame['brain_mask_file'] =\
             self.data_frame.apply(_extract_fname,
                                   args=('brain_mask'), axis=1)
-
+                                  # This is our prototypical example for appling
+                                  # a function to each subject and adding the
+                                  # results back into a new column of the
+                                  # dataframe. In this case the nifti image is
+                                  # save out and the path is saved in the datafram
         self.data_frame['brain_mask_img'] =\
             self.data_frame.apply(_brain_extract, axis=1,
                                   median_radius=median_radius,
@@ -199,6 +180,10 @@ class AFQ(object):
 
 
 def _brain_extract_fname(row):
+    """
+    This function generates the filename for the subject's brain extraction
+    """
+
     split_fdwi = op.split(row['dwi_file'])
     be_fname = op.join(split_fdwi[0], split_fdwi[1].split('.')[0] +
                        '_brain_mask.nii.gz')
@@ -207,6 +192,10 @@ def _brain_extract_fname(row):
 
 def _brain_extract(row, median_radius=4, numpass=4, autocrop=False,
                    vol_idx=None, dilate=None, force_recompute=False):
+    """
+    This function does the brain extraction (if needed) and save out the result
+    as a nifti image
+    """
     if not op.exists(row['brain_mask_file']) or force_recompute:
         img = nib.load(row['dwi_file'])
         data = img.get_data()
