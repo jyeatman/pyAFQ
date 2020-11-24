@@ -244,6 +244,8 @@ def tract_generator(sft, affine, bundle, bundle_dict, colors, n_points,
     viz_logger.info("Generating colorful lines from tractography...")
 
     if list(sft.data_per_streamline.keys()) == []:
+        if isinstance(colors, dict):
+            colors = list(colors.values())
         # There are no bundles in here:
         if len(streamlines) > n_sls_viz:
             idx = np.arange(len(streamlines))
@@ -1351,7 +1353,7 @@ class GroupCSVComparison():
                 removal_idx,
                 axis=1)
         else:
-            is_removed_bundle = [False]*len(self.bundles)
+            is_removed_bundle = [False] * len(self.bundles)
 
         df_bundle_prof_means = pd.DataFrame(
             columns=['scalar', 'tractID', 'value'])
